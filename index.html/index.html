@@ -375,6 +375,15 @@ $("fechar-sacola").addEventListener("click", fecharSacola);
 $("overlay").addEventListener("click", fecharSacola);
 $("enviar").addEventListener("click", validarEEnviar);
 $("ver-sacola").addEventListener("click", abrirSacola);
+$("grid").addEventListener("click", e => {
+  const b = e.target.closest("[data-add]"); if (!b) return;
+  const id = Number(b.dataset.add);
+  const item = sacola.find(i => i.id === id);
+  item ? item.qtd++ : sacola.push({id, qtd:1});
+  salvar(); atualizarSacola();
+  b.textContent = "✓ Adicionado";
+  setTimeout(() => b.textContent = "Adicionar à sacola", 900);
+});
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest("[data-cat]"); if (!b) return;
   categoriaAtiva = b.dataset.cat; renderTabs(); renderGrid();
