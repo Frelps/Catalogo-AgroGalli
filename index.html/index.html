@@ -41,6 +41,12 @@ header{position:sticky;top:0;z-index:40;background:var(--folha-d);color:#fff;box
 .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:24px 16px 8px}
 .tab{border:2px solid var(--folha);background:#fff;color:var(--folha-d);padding:8px 16px;border-radius:999px;font-weight:600}
 .tab.ativa{background:var(--folha);color:#fff}
+.busca{display:flex;gap:8px;max-width:520px;margin:16px auto 0;padding:0 16px}
+.busca input{flex:1;padding:12px 16px;border:2px solid var(--folha);border-radius:999px;font:inherit;outline:none}
+.busca input:focus{border-color:var(--lar)}
+.busca button{background:var(--folha);color:#fff;border:0;border-radius:999px;padding:0 18px;font-weight:700}
+.busca button:hover{background:var(--folha-d)}
+.vazio-busca{grid-column:1/-1;text-align:center;color:var(--cinza);padding:40px 0}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;padding:16px 0 40px}
@@ -120,6 +126,11 @@ footer iframe{width:100%;height:180px;border:0;border-radius:12px}
     <a class="btn b-out" href="https://wa.me/5516996293367" target="_blank" rel="noopener">Chamar no WhatsApp</a>
   </div>
 </section>
+
+<div class="busca">
+  <input id="busca-input" type="search" placeholder="Buscar produto pelo nome..." aria-label="Buscar produto pelo nome">
+  <button id="busca-limpar" type="button">Limpar</button>
+</div>
 
 <div class="tabs" id="tabs"></div>
 
@@ -277,18 +288,22 @@ function cardHTML(p){
       </div>
     </article>`;
 }
-function renderGrid(){
-  const lista = categoriaAtiva === "Todos" ? PRODUTOS : PRODUTOS.filter(p => p.categoria === categoriaAtiva);
-  $("grid").innerHTML = lista.map(cardHTML).join("");
+let termoBusca = "";
+
+function normalizar(s){
+  return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
-$("grid").addEventListener("click", e => {
-  const b = e.target.closest("[data-add]"); if (!b) return;
-  const id = Number(b.dataset.add);
-  const item = sacola.find(i => i.id === id);
-  item ? item.qtd++ : sacola.push({id, qtd:1});
-  salvar(); atualizarSacola(); b.textContent = "✓ Adicionado";
-  setTimeout(() => b.textContent = "Adicionar à sacola", 900);
-});
+
+function renderGrid(){
+  const termo = normalizar(termoBusca);
+  const lista = PRODUTOS.filter(p =>
+    (categoriaAtiva === "Todos" || p.categoria === categoriaAtiva) &&
+    (!termo || normalizar(p.nome).includes(termo))
+  );
+  $("grid").innerHTML = lista.length
+    ? lista.map(cardHTML).join("")
+    : `<div class="vazio-busca">Nenhum produto encontrado${termo ? ` para "${esc(termoBusca)}"` : ""}.</div>`;
+}
 
 /* Sacola */
 function abrirSacola(){ $("sacola").classList.add("on"); $("overlay").classList.add("on"); }
@@ -361,6 +376,16 @@ $("ver-sacola").addEventListener("click", abrirSacola);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest("[data-cat]"); if (!b) return;
   categoriaAtiva = b.dataset.cat; renderTabs(); renderGrid();
+});
+
+$("busca-input").addEventListener("input", e => {
+  termoBusca = e.target.value;
+  renderGrid();
+});
+$("busca-limpar").addEventListener("click", () => {
+  termoBusca = "";
+  $("busca-input").value = "";
+  renderGrid();
 });
 
 /* Inicialização */
